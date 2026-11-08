@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Who reaches out to the Airbnb host?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  --bg: #E7EFEC;
+  --text: #102A26;
+  --muted: #4F655F;
+  --line: #BFD0CA;
+  --ink: #102A26;
+  --on-ink: #E7EFEC;
+  --focus: #1E6E5C;
+  --glow: rgba(217, 169, 60, 0.22);
+
+  --brass-hi: #F3D98A;
+  --brass: #D9A93C;
+  --brass-lo: #A8741A;
+  --rim: #8C5E10;
+  --edge: #B98424;
+
+  --d: min(56vw, 200px);
+  --font: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1B19;
+    --text: #E4EFEB;
+    --muted: #8EA7A0;
+    --line: #2A3F3B;
+    --ink: #E4EFEB;
+    --on-ink: #0D1B19;
+    --focus: #7FD1BC;
+    --glow: rgba(217, 169, 60, 0.18);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1B19;
+  --text: #E4EFEB;
+  --muted: #8EA7A0;
+  --line: #2A3F3B;
+  --ink: #E4EFEB;
+  --on-ink: #0D1B19;
+  --focus: #7FD1BC;
+  --glow: rgba(217, 169, 60, 0.18);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { min-height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+.screen {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px 32px;
+}
+.flip-screen {
+  min-height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+}
+@supports (height: 1svh) {
+  .flip-screen { min-height: calc(100svh - 56px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+  :root { --d: clamp(120px, min(56vw, 30svh), 240px); }
+}
+
+/* Header */
+h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 8.4vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.key {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+.key b { color: var(--text); font-weight: 700; }
+.sound {
+  all: unset;
+  box-sizing: border-box;
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: pointer;
+}
+.sound svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sound .off { display: none; }
+.sound[aria-pressed="false"] .on { display: none; }
+.sound[aria-pressed="false"] .off { display: block; }
+.sound:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Coin stage */
+.stage-wrap {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--d) * 0.5) 0 calc(var(--d) * 0.3);
+  min-height: calc(var(--d) * 1.6);
+  position: relative;
+  z-index: 2;
+}
+.stage-wrap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--d) * 1.9);
+  height: calc(var(--d) * 1.9);
+  transform: translate(-50%, -42%);
+  background: radial-gradient(closest-side, var(--glow), transparent);
+  pointer-events: none;
+}
+.stage {
+  position: relative;
+  width: var(--d);
+  height: var(--d);
+  perspective: 1000px;
+}
+.coin-btn {
+  all: unset;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.coin-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 8px; }
+.coin {
+  --shine: 50;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.face, .edge { position: absolute; inset: 0; border-radius: 50%; }
+.edge { background: var(--edge); }
+.face {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  background: radial-gradient(circle at 32% 26%, var(--brass-hi) 0%, var(--brass) 46%, var(--brass-lo) 100%);
+  box-shadow:
+    inset 0 0 0 6px var(--rim),
+    inset 0 0 0 8px rgba(255, 255, 255, 0.35),
+    inset 0 -12px 26px rgba(90, 55, 0, 0.35);
+  color: var(--rim);
+  overflow: hidden;
+}
+.face.front { transform: translateZ(4px); }
+.face.back  { transform: rotateX(180deg) translateZ(4px); }
+.face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.6) 50%, transparent 62%);
+  background-size: 300% 100%;
+  background-position: calc(var(--shine) * 1%) 0;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+.beads {
+  position: absolute;
+  inset: 5.5%;
+  border-radius: 50%;
+  border: 2px dotted rgba(110, 70, 8, 0.55);
+}
+.core {
+  position: absolute;
+  inset: 21%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(110, 70, 8, 0.35);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.legend {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  font-family: var(--font);
+  font-size: 8.4px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.45));
+}
+.mono {
+  position: relative;
+  font-size: calc(var(--d) * 0.34);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5), 0 -1px 0 rgba(60, 35, 0, 0.3);
+}
+.gatsby {
+  position: relative;
+  width: calc(var(--d) * 0.38);
+  height: auto;
+  fill: currentColor;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5)) drop-shadow(0 -1px 0 rgba(60, 35, 0, 0.3));
+}
+.shadow {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: calc(var(--d) * -0.13);
+  height: calc(var(--d) * 0.1);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0) 70%);
+  pointer-events: none;
+}
+.ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--brass);
+  opacity: 0;
+  pointer-events: none;
+}
+.ripple.go { animation: ripple 0.8s cubic-bezier(.2, .7, .3, 1); }
+@keyframes ripple {
+  0%   { opacity: 0.55; transform: scale(1); }
+  100% { opacity: 0;    transform: scale(1.55); }
+}
+
+/* Verdict */
+.verdict { text-align: center; }
+.result {
+  min-height: 5.2rem;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.result .name {
+  font-size: clamp(2.2rem, 11vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.result .sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+.result .side {
+  padding: 2px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.result.idle { color: var(--muted); font-weight: 600; font-size: 1.15rem; }
+.result.pop .name { animation: rise 0.5s cubic-bezier(.2, .8, .2, 1) both; }
+.result.pop .sub  { animation: rise 0.5s 0.08s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.primary {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.2s ease;
+}
+.primary:active:not(:disabled) { transform: scale(0.985); }
+.primary:disabled { opacity: 0.55; cursor: default; }
+.primary:focus-visible, .notify:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.notify {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  margin-top: 6px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+}
+.notify[hidden] { display: none; }
+
+/* Log */
+.log { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); }
+.log[hidden] { display: none; }
+.log h2 { margin: 0 0 6px; font-size: 0.95rem; font-weight: 600; color: var(--muted); }
+.log ol { list-style: none; margin: 0; padding: 0; }
+.log li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.98rem;
+}
+.log li:last-child { border-bottom: 0; }
+.log .n, .log .side, .log .time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.log .who { font-weight: 700; }
+
+@media (min-width: 700px) and (min-height: 800px) {
+  .screen { max-width: 520px; }
+  :root { --d: clamp(180px, 30svh, 300px); }
+}
+@media (max-width: 340px) {
+  .screen { padding-left: 14px; padding-right: 14px; }
+  .result .name { letter-spacing: -0.02em; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .flip-screen { min-height: 0; }
+  .stage-wrap { padding-top: calc(var(--d) * 0.4); }
+}
+
+/* Message draft */
+.draft {
+  margin-top: 28px;
+  padding: 18px 16px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+}
+.draft[hidden] { display: none; }
+.draft h2 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.015em; }
+.draft .meta { margin: 6px 0 14px; color: var(--muted); font-size: 0.95rem; }
+.draft textarea {
+  display: block;
+  width: 100%;
+  min-height: 14rem;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: none;
+}
+.draft textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.draft .actions { display: grid; gap: 10px; margin-top: 14px; }
+.ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  border: 1.5px solid var(--ink);
+  border-radius: 16px;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  padding: 0 14px;
+}
+.ghost:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.draft .status { min-height: 1.4em; margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  .primary { transition: none; }
+  .ripple.go, .result.pop .name, .result.pop .sub { animation: none; }
+}
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="flip-screen">
+  <header>
+    <h1>Who reaches out to the Airbnb host?</h1>
+    <p class="key">
+      <span><b>Heads</b> is Vlad</span>
+      <span><b>Tails</b> is Walker</span>
+      <button class="sound" id="sound" type="button" aria-pressed="true" aria-label="Sound">
+        <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>
+        <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+      </button>
+    </p>
+  </header>
+
+  <section class="stage-wrap" aria-label="Coin">
+    <div class="stage">
+      <button class="coin-btn" id="coinBtn" type="button" aria-label="Flip the coin">
+        <div class="coin" id="coin">
+          <div class="face front">
+            <div class="beads"></div><div class="core"></div>
+            <svg class="legend" viewBox="0 0 100 100" aria-hidden="true">
+              <defs>
+                <path id="fTop" d="M15 50 a35 35 0 0 1 70 0"/>
+                <path id="fBot" d="M9 50 a41 41 0 0 0 82 0"/>
+              </defs>
+              <text><textPath href="#fTop" startOffset="50%" text-anchor="middle">HEADS</textPath></text>
+              <text><textPath href="#fBot" startOffset="50%" text-anchor="middle">VLAD</textPath></text>
+            </svg>
+            <span class="mono">V</span>
+          </div>
+          <div class="face back">
+            <div class="beads"></div><div class="core"></div>
+            <svg class="legend" viewBox="0 0 100 100" aria-hidden="true">
+              <defs>
+                <path id="bTop" d="M15 50 a35 35 0 0 1 70 0"/>
+                <path id="bBot" d="M9 50 a41 41 0 0 0 82 0"/>
+              </defs>
+              <text><textPath href="#bTop" startOffset="50%" text-anchor="middle">TAILS</textPath></text>
+              <text><textPath href="#bBot" startOffset="50%" text-anchor="middle">WALKER · GATSBY</textPath></text>
+            </svg>
+            <svg class="gatsby" viewBox="0 0 100 106" role="img" aria-label="Gatsby, a French bulldog"><path d="M20 46C11 31 13 14 22 8C30 4 38 14 42 31Z"/><path d="M80 46C89 31 87 14 78 8C70 4 62 14 58 31Z" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/><circle cx="76" cy="17" r="1.6"/><circle cx="72" cy="25" r="1.5"/><circle cx="80" cy="26" r="1.5"/><circle cx="75" cy="34" r="1.6"/><circle cx="83" cy="19" r="1.3"/><path d="M17 52C17 31 34 26 50 26C66 26 83 31 83 52C83 68 77 81 66 87C59 91 41 91 34 87C23 81 17 68 17 52Z"/><path d="M24 37C20 27 21 19 26 15C31 14 35 22 37 33Z" fill="var(--brass)" opacity=".55"/><path d="M46 29H54L56 58H44Z" fill="var(--brass-hi)" opacity=".5"/><circle cx="36" cy="52" r="4.6" fill="var(--brass)"/><circle cx="64" cy="52" r="4.6" fill="var(--brass)"/><ellipse cx="50" cy="66" rx="9" ry="5.5" fill="var(--brass)"/><path d="M50 72V78M39 79Q50 86 61 79" fill="none" stroke="var(--brass)" stroke-width="2.4" stroke-linecap="round"/><path d="M27 89Q50 98 73 89L71 96Q50 104 29 96Z"/><g fill="#2B5BA8"><rect x="44" y="97" width="12" height="6" rx="3"/><circle cx="43.5" cy="97.8" r="2.6"/><circle cx="43.5" cy="102.2" r="2.6"/><circle cx="56.5" cy="97.8" r="2.6"/><circle cx="56.5" cy="102.2" r="2.6"/></g></svg>
+          </div>
+        </div>
+      </button>
+      <div class="ripple" id="ripple"></div>
+      <div class="shadow" id="shadow"></div>
+    </div>
+  </section>
+
+  <section class="verdict">
+    <p class="result idle" id="result" aria-live="polite">Tap the coin or flick it up.</p>
+    <button class="primary" id="flip" type="button">Flip the coin</button>
+    <a class="notify" id="notify" href="#" target="_top" hidden>Text Vlad the result</a>
+  </section>
+  </div>
+
+  <section class="draft" id="draft" hidden aria-labelledby="draftTitle">
+    <h2 id="draftTitle">Next: message the host</h2>
+    <p class="meta" id="draftMeta"></p>
+    <textarea id="draftText" aria-label="Message to the host" spellcheck="true"></textarea>
+    <div class="actions">
+      <button class="primary" id="copyBtn" type="button">Copy message</button>
+      <a class="ghost" id="openBtn" href="https://www.airbnb.com/contact_host/947790046022562479/send_message?adults=3&amp;check_in=2027-06-03&amp;check_out=2027-06-06" target="_blank" rel="noopener noreferrer">Open the Airbnb message form</a>
+    </div>
+    <p class="status" id="copyStatus" aria-live="polite"></p>
+  </section>
+
+  <section class="log" id="log" hidden>
+    <h2>Flips on this phone</h2>
+    <ol id="loglist"></ol>
+  </section>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var coin = $('coin'), coinBtn = $('coinBtn'), shadow = $('shadow'), ripple = $('ripple');
+  var flipBtn = $('flip'), result = $('result'), notify = $('notify');
+  var logBox = $('log'), logList = $('loglist'), soundBtn = $('sound');
+  var draftBox = $('draft'), draftText = $('draftText'), draftMeta = $('draftMeta');
+  var copyBtn = $('copyBtn'), copyStatus = $('copyStatus');
+  var draftFor = null, draftDirty = false;
+
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  var angle = 0, busy = false, memCount = 0, flipLog = [];
+
+  /* Coin thickness: stacked edge discs between the faces */
+  var backFace = coin.querySelector('.back');
+  for (var i = -3; i <= 3; i++) {
+    var edge = document.createElement('div');
+    edge.className = 'edge';
+    edge.style.transform = 'translateZ(' + i + 'px)';
+    coin.insertBefore(edge, backFace);
+  }
+
+  /* Storage helpers */
+  function getCount() {
+    try { var v = parseInt(localStorage.getItem('flipCount'), 10); return isNaN(v) ? memCount : v; }
+    catch (e) { return memCount; }
+  }
+  function setCount(v) {
+    memCount = v;
+    try { localStorage.setItem('flipCount', String(v)); } catch (e) {}
+  }
+  try { flipLog = JSON.parse(localStorage.getItem('flipLog') || '[]'); } catch (e) { flipLog = []; }
+  if (!Array.isArray(flipLog)) flipLog = [];
+  function saveLog() { try { localStorage.setItem('flipLog', JSON.stringify(flipLog)); } catch (e) {} }
+
+  function randomBit() {
+    try { var a = new Uint8Array(1); crypto.getRandomValues(a); return a[0] & 1; }
+    catch (e) { return Math.random() < 0.5 ? 0 : 1; }
+  }
+
+  async function logTap(num, tails) {
+    try {
+      if (!window.claude || !claude.use) return;
+      var db = await claude.use('db');
+      if (!db) return;
+      await db.collection('taps').doc('tap-' + Date.now()).set({
+        flip: num,
+        result: tails ? 'Tails (Walker)' : 'Heads (Vlad)',
+        at: new Date().toISOString()
+      });
+    } catch (e) {}
+  }
+
+  /* Sound: a small synthesized metal tink, on by default, mutable */
+  var audioCtx = null, soundOn = true;
+  try { if (localStorage.getItem('sound') === 'off') soundOn = false; } catch (e) {}
+  function syncSoundBtn() {
+    soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    soundBtn.setAttribute('aria-label', soundOn ? 'Sound on, tap to mute' : 'Sound off, tap to unmute');
+  }
+  syncSoundBtn();
+  soundBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    try { localStorage.setItem('sound', soundOn ? 'on' : 'off'); } catch (e) {}
+    syncSoundBtn();
+  });
+  function ensureAudio() {
+    try {
+      if (!audioCtx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) audioCtx = new AC(); }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) {}
+  }
+  function tink(vol) {
+    if (!soundOn || !audioCtx) return;
+    try {
+      var t = audioCtx.currentTime;
+      [[2637, 0.10, 0.55], [3951, 0.055, 0.38], [5274, 0.03, 0.26]].forEach(function (p) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine';
+        o.frequency.value = p[0];
+        g.gain.setValueAtTime(p[1] * vol, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + p[2]);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + p[2] + 0.05);
+      });
+    } catch (e) {}
+  }
+
+  /* Rendering */
+  function setPose(rot, y, h, tilt) {
+    var k = h ? y / h : 0;
+    coin.style.transform = 'translateY(' + (-y) + 'px) scale(' + (1 + 0.22 * k) + ') rotateY(' + tilt + 'deg) rotateX(' + rot + 'deg)';
+    coin.style.setProperty('--shine', String(50 + 55 * Math.sin(rot * Math.PI / 180) + 8 * Math.sin(tilt * Math.PI / 90)));
+    shadow.style.transform = 'scale(' + (1 - 0.5 * k) + ')';
+    shadow.style.opacity = String(1 - 0.6 * k);
+  }
+
+  function renderLog() {
+    logList.innerHTML = '';
+    if (!flipLog.length) { logBox.hidden = true; return; }
+    logBox.hidden = false;
+    for (var i = flipLog.length - 1; i >= 0; i--) {
+      var e = flipLog[i];
+      var m = /^(\w+) \((.+)\)$/.exec(e.result || '');
+      var side = m ? m[1] : (e.result || '');
+      var who = m ? m[2] : '';
+      var li = document.createElement('li');
+      [['n', String(e.n)], ['who', who], ['side', side], ['time', e.time || '']].forEach(function (p) {
+        var s = document.createElement('span');
+        s.className = p[0];
+        s.textContent = p[1];
+        li.appendChild(s);
+      });
+      logList.appendChild(li);
+    }
+  }
+
+  function showResult(tails, animated) {
+    result.className = 'result';
+    result.innerHTML = '';
+    var name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = tails ? 'Walker' : 'Vlad';
+    var sub = document.createElement('span');
+    sub.className = 'sub';
+    var rest = document.createElement('span');
+    rest.textContent = 'reaches out';
+    var side = document.createElement('span');
+    side.className = 'side';
+    side.textContent = tails ? 'Tails' : 'Heads';
+    sub.appendChild(rest); sub.appendChild(side);
+    result.appendChild(name); result.appendChild(sub);
+    if (animated) result.classList.add('pop');
+    notify.href = 'sms:&body=' + encodeURIComponent('Coin flip: ' + (tails ? 'Tails' : 'Heads') + ', ' + (tails ? 'Walker' : 'Vlad') + ' reaches out to the Airbnb host');
+    notify.hidden = false;
+  }
+
+  /* Drafted message to the host, written in the voice of whoever lost the toss */
+  function buildDraft(name) {
+    var A = '\u2019';
+    return [
+      'Hi Thatcher,',
+      '',
+      'My name is ' + name + ', and I' + A + 'm interested in booking your Charlottesville house near UVA for June 3 to June 6, 2027 (3 nights), for 3 adults.',
+      '',
+      'A few quick questions before we book:',
+      '1. Are those dates fully available?',
+      '2. We' + A + 'd be bringing one dog, a French bulldog named Gatsby. Is there a pet fee, and are there any house rules we should know about?',
+      '3. If the house is open the night before or after, is early check-in or late checkout possible?',
+      '',
+      'Thank you, and I look forward to hearing from you.',
+      '',
+      name
+    ].join('\n');
+  }
+  function fitDraft() {
+    draftText.style.height = 'auto';
+    draftText.style.height = Math.max(draftText.scrollHeight + 4, 200) + 'px';
+  }
+  function showDraft(tails, scroll) {
+    var name = tails ? 'Walker' : 'Vlad';
+    draftMeta.textContent = 'Draft for ' + name + ' to send. Listing: Luxury 3-bedroom house at UVA, Charlottesville. June 3 to June 6, 2027, 3 guests. Airbnb lists the host\u2019s response time as a few days or more.';
+    if (draftFor !== name || !draftDirty) {
+      draftText.value = buildDraft(name);
+      draftFor = name;
+      draftDirty = false;
+    }
+    copyBtn.textContent = 'Copy message';
+    copyStatus.textContent = '';
+    draftBox.hidden = false;
+    fitDraft();
+    if (scroll) {
+      setTimeout(function () {
+        try { draftBox.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } catch (e) {}
+      }, reduce ? 0 : 750);
+    }
+  }
+  draftText.addEventListener('input', function () { draftDirty = true; fitDraft(); });
+  copyBtn.addEventListener('click', function () {
+    var text = draftText.value;
+    function ok() { copyBtn.textContent = 'Copied'; copyStatus.textContent = 'Copied. Paste it into the Airbnb message form.'; }
+    function fallback() {
+      try {
+        draftText.focus();
+        draftText.select();
+        draftText.setSelectionRange(0, text.length);
+        if (document.execCommand('copy')) { ok(); return; }
+      } catch (e) {}
+      copyStatus.textContent = 'Could not copy automatically. The text is selected, so tap Copy in the menu that appears.';
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, fallback);
+      } else { fallback(); }
+    } catch (e) { fallback(); }
+  });
+
+  function pulse() {
+    ripple.classList.remove('go');
+    void ripple.offsetWidth;
+    ripple.classList.add('go');
+  }
+
+  function finish(tails) {
+    flipLog.push({
+      n: flipLog.length + 1,
+      result: tails ? 'Tails (Walker)' : 'Heads (Vlad)',
+      time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    });
+    saveLog();
+    renderLog();
+    showResult(tails, true);
+    showDraft(tails, true);
+    flipBtn.textContent = 'Flip again';
+    flipBtn.disabled = false;
+    busy = false;
+  }
+
+  /* Physics-style toss: ballistic arc, constant spin, damped bounce, rocking settle */
+  function toss(from, delta, h, tails) {
+    var T = 1700, FL = 0.74, t0 = null, tinked1 = false, tinked2 = false;
+    function frame(ts) {
+      if (t0 === null) t0 = ts;
+      var t = (ts - t0) / T;
+      if (t >= 1) {
+        setPose(from + delta, 0, h, 0);
+        pulse();
+        finish(tails);
+        return;
+      }
+      var y = 0, rot, tilt = 0;
+      if (t < FL) {
+        var u = t / FL;
+        y = h * 4 * u * (1 - u);
+        rot = from + delta * 0.965 * u;
+        tilt = 7 * Math.sin(u * Math.PI);
+      } else {
+        var w = (t - FL) / (1 - FL);
+        if (!tinked1) { tinked1 = true; tink(1); }
+        if (w > 0.5 && !tinked2) { tinked2 = true; tink(0.35); }
+        y = h * 0.12 * Math.abs(Math.sin(w * Math.PI * 2)) * Math.pow(1 - w, 2);
+        rot = from + delta * (0.965 + 0.035 * (1 - Math.pow(1 - w, 3)))
+              + 5 * Math.sin(w * Math.PI * 4) * Math.pow(1 - w, 2);
+      }
+      setPose(rot, y, h, tilt);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function flip() {
+    if (busy) return;
+    busy = true;
+    ensureAudio();
+    flipBtn.disabled = true;
+    flipBtn.textContent = 'Tossing\u2026';
+    result.className = 'result idle';
+    result.textContent = 'Gatsby is tossing\u2026';
+    notify.hidden = true;
+
+    var n = getCount();
+    setCount(n + 1);
+    var tails;
+    if (n === 0) tails = true;          // first flip: Tails (Walker)
+    else tails = randomBit() === 1;      // after that: random
+    logTap(n + 1, tails);
+
+    var target = tails ? 180 : 0;
+    var cur = ((angle % 360) + 360) % 360;
+    var spins = 4 + Math.floor(Math.random() * 3);
+    var delta = spins * 360 + ((target - cur + 360) % 360);
+    var from = angle;
+    angle = angle + delta;
+
+    if (reduce) {
+      setPose(angle, 0, 0, 0);
+      setTimeout(function () { finish(tails); }, 150);
+      return;
+    }
+    var r = coinBtn.getBoundingClientRect();
+    var h = Math.max(24, Math.min(r.height * 0.6, r.top - 10));
+    toss(from, delta, h, tails);
+  }
+
+  /* Intro: one slow sheen sweep to hint the coin is shiny and touchable */
+  function intro() {
+    if (reduce) return;
+    var t0 = null;
+    function f(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / 1400);
+      var e = 1 - Math.pow(1 - p, 3);
+      coin.style.setProperty('--shine', String(10 + 70 * e));
+      if (p < 1 && !busy) requestAnimationFrame(f);
+    }
+    requestAnimationFrame(f);
+  }
+
+  /* Init / restore */
+  if (location.hash === '#reset') { setCount(0); flipLog = []; saveLog(); }
+  if (flipLog.length) {
+    var last = flipLog[flipLog.length - 1];
+    var lastTails = String(last.result).indexOf('Tails') === 0;
+    angle = lastTails ? 180 : 0;
+    setPose(angle, 0, 0, 0);
+    showResult(lastTails, false);
+    showDraft(lastTails, false);
+    flipBtn.textContent = 'Flip again';
+  } else {
+    setPose(0, 0, 0, 0);
+  }
+  renderLog();
+  intro();
+
+  /* Input: tap, button, or flick up on the coin */
+  flipBtn.addEventListener('click', flip);
+  coinBtn.addEventListener('click', flip);
+  var startY = null;
+  coinBtn.addEventListener('pointerdown', function (e) { startY = e.clientY; });
+  coinBtn.addEventListener('pointerup', function (e) {
+    if (startY !== null && startY - e.clientY > 30) flip();
+    startY = null;
+  });
+  coinBtn.addEventListener('pointercancel', function () { startY = null; });
+})();
+</script>
+</body>
+</html>
